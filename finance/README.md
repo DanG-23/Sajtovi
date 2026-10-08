@@ -12,11 +12,19 @@ It shows what's left this month, where the money went, and gives you a straight 
 
 ## Put it on your phone
 
-1. Turn on GitHub Pages for this repo: **Settings → Pages → Deploy from a branch → `main` / root**.
-2. Open `https://dang-23.github.io/Sajtovi/finance/` on your phone.
-3. **iPhone:** Safari → Share → **Add to Home Screen**. **Android:** Chrome → ⋮ → **Install app**.
+**One-time setup (on GitHub, 1 minute):**
+1. Go to <https://github.com/DanG-23/Sajtovi/settings/pages>.
+2. Under **Build and deployment → Source**, choose **Deploy from a branch**.
+3. Pick the branch that has the `finance` folder (`main` once this is merged, or `claude/finance-tracking-app-or1q0b`), folder **/ (root)**, then **Save**.
+4. Wait a minute or two until the page says "Your site is live".
 
-It then opens like a normal app and works offline. Your data is stored on the phone (use **Settings → Export backup** now and then).
+**Install on the phone:** open <https://dang-23.github.io/Sajtovi/finance/> on the phone, then:
+- **iPhone:** in Safari tap **Share** (under **⋯** on newer iPhones) → **Add to Home Screen** → **Add**.
+- **Android:** in Chrome tap **Install** when it pops up, or **⋮** → **Install app** / **Add to Home screen**.
+
+Kasa then has its own icon, opens full screen, and works offline. Your data is stored on the phone.
+On iPhone, the home-screen app keeps its own data separate from Safari, so install it first and then start logging
+(or move data over with **Settings → Export backup / Import backup**).
 
 ## Turn on the AI coach
 

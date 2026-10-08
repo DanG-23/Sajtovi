@@ -138,6 +138,14 @@ p { margin: 0; }
 .demo p { font-size: 14px; color: var(--ink-2); }
 .demo strong { color: var(--ink); }
 
+/* install card */
+.install { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.install img { width: 44px; height: 44px; border-radius: 11px; display: block; }
+.install b { display: block; font-size: 15px; }
+.install p { font-size: 13.5px; color: var(--ink-2); }
+.install .share { display: inline-block; width: 15px; height: 15px; vertical-align: -2px; color: var(--brass); }
+.install-actions { grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; }
+
 /* hero */
 .hero { background: var(--hero); color: var(--hero-ink); border-radius: 22px; padding: 20px 20px 18px; display: grid; gap: 4px; box-shadow: var(--shadow); border: 1px solid var(--hero-line); }
 .hero .label { color: var(--hero-muted); }
@@ -1046,6 +1054,28 @@ let filter = "all";
 let lastType = lsGet("kasa.lastType") || "tip";
 let confirmErase = false;
 let installEvt = null;
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const IS_PHONE = IS_IOS || /Android|Mobi/i.test(navigator.userAgent);
+const isInstalled = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const SHARE_ICON = `<svg class="share" viewBox="0 0 16 16" aria-label="Share"><path d="M8 1.5v8.5M5 4.2 8 1.5l3 2.7M4.5 6.5H3.2v8h9.6v-8h-1.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+// Shown at the top of Overview on a phone browser until the app is installed (or dismissed).
+function installCard() {
+  if (IN_ARTIFACT || isInstalled() || lsGet("kasa.installDismissed")) return "";
+  if (!installEvt && !IS_PHONE) return "";
+  const icon = `<img src="icons/icon-192.png" alt="" width="44" height="44">`;
+  const later = `<button class="btn btn-ghost btn-sm" data-action="install-later">Not now</button>`;
+  if (installEvt) {
+    return `<div class="install">${icon}<div><b>Install Kasa on your phone</b><p>It gets its own icon, opens full screen and works offline.</p></div>
+      <div class="install-actions">${later}<button class="btn btn-brass btn-sm" data-action="install">Install</button></div></div>`;
+  }
+  if (IS_IOS) {
+    return `<div class="install">${icon}<div><b>Put Kasa on your home screen</b><p>In Safari, tap ${SHARE_ICON} <b style="display:inline">Share</b> (on newer iPhones it's under the ⋯ button), then <b style="display:inline">Add to Home Screen</b>. Do it before adding your numbers: the home-screen app keeps its own data.</p></div>
+      <div class="install-actions">${later}</div></div>`;
+  }
+  return `<div class="install">${icon}<div><b>Install Kasa on your phone</b><p>Open the browser menu ⋮ and tap <b style="display:inline">Install app</b> or <b style="display:inline">Add to Home screen</b>.</p></div>
+    <div class="install-actions">${later}</div></div>`;
+}
 
 /* ---------- render ---------- */
 function render() {
@@ -1055,7 +1085,7 @@ function render() {
   $("#monthNext").disabled = curMonth >= tk;
   document.querySelectorAll(".tab[data-tab]").forEach(b => b.setAttribute("aria-current", b.dataset.tab === view ? "page" : "false"));
   const html = view === "entries" ? viewEntries() : view === "coach" ? viewCoach() : view === "settings" ? viewSettings() : viewHome();
-  $("#view").innerHTML = (demo ? demoBanner() : "") + html;
+  $("#view").innerHTML = (view === "home" ? installCard() : "") + (demo ? demoBanner() : "") + html;
 }
 function demoBanner() {
   return `<div class="demo"><p><strong>These are example numbers.</strong> Look around, then start with your own salary, tips and spending.</p><button class="btn btn-primary" data-action="start">Start with my numbers</button></div>`;
@@ -1300,10 +1330,9 @@ function viewSettings() {
       <label class="field"><span>Anthropic API key</span><input class="input" id="setKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…" value="${esc(s.apiKey)}"><small>Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. It's stored only on this phone and sent only to Anthropic. A monthly report costs a few cents.</small></label>
       <div class="settings-actions"><button class="btn btn-primary btn-sm" data-action="save-key">Save key</button>${s.apiKey ? `<button class="btn btn-ghost btn-sm" data-action="remove-key">Remove key</button>` : ""}</div>
     </section>`);
-    const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
-    if (!standalone) {
+    if (!isInstalled()) {
       parts.push(`<section class="card"><div class="card-head"><h2>Put Kasa on your phone</h2></div>
-        <p class="fine"><b>iPhone:</b> open this page in Safari, tap Share, then <b>Add to Home Screen</b>.</p>
+        <p class="fine"><b>iPhone:</b> open this page in Safari, tap Share (under ⋯ on newer iPhones), then <b>Add to Home Screen</b>. The home-screen app keeps its own data, so install it before you start logging, or move your data with Export / Import backup.</p>
         <p class="fine"><b>Android:</b> open it in Chrome, tap the ⋮ menu, then <b>Install app</b>.</p>
         ${installEvt ? `<button class="btn btn-brass btn-sm" data-action="install">Install Kasa</button>` : ""}</section>`);
     }
@@ -1521,6 +1550,7 @@ document.addEventListener("click", e => {
     }
     case "remove-key": state.settings.apiKey = ""; persist(); render(); toast("API key removed"); break;
     case "install": if (installEvt) { installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; render(); }); } break;
+    case "install-later": lsSet("kasa.installDismissed", "1"); render(); break;
     case "export": exportData(); break;
     case "erase-ask": confirmErase = true; render(); break;
     case "erase-no": confirmErase = false; render(); break;
@@ -1624,7 +1654,8 @@ async function eraseAll() {
   if (!IN_ARTIFACT && "serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
     navigator.serviceWorker.register("sw.js").catch(() => { /* offline support is optional */ });
   }
-  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (view === "settings") render(); });
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (!sheetDraft) render(); });
+  window.addEventListener("appinstalled", () => { installEvt = null; render(); toast("Kasa is on your home screen"); });
   // Roll over to the new month (and refresh "today") when the app is reopened.
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;

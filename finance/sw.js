@@ -1,5 +1,5 @@
 // Kasa offline cache. Bump VERSION when shipping changes to the app files.
-const VERSION = "kasa-v1";
+const VERSION = "kasa-v2";
 const SHELL = [
   "./",
   "./index.html",
